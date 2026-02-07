@@ -14,13 +14,33 @@ generateBtn.addEventListener("click", async () => {
     return;
   }
 
-  const cuisines = checked.join(",");
+  restaurants = [];
 
-  const res = await fetch(
-    `https://YOUR-VERCEL-URL.vercel.app/api/restaurants?cuisines=${cuisines}`
-  );
+  for (const cuisine of checked) {
+    const query = `
+      [out:json];
+      area["name"="New York"]->.searchArea;
+      (
+        node["amenity"="restaurant"]["cuisine"~"${cuisine}", i](area.searchArea);
+      );
+      out;
+    `;
 
-  restaurants = await res.json();
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query,
+    });
+
+    const data = await res.json();
+
+    const places = data.elements.map((el) => ({
+      name: el.tags.name || "Unknown",
+      lat: el.lat,
+      lon: el.lon,
+    }));
+
+    restaurants.push(...places);
+  }
 
   alert(`Loaded ${restaurants.length} restaurants`);
 });
@@ -35,7 +55,8 @@ spinBtn.addEventListener("click", () => {
 
   result.innerHTML = `
     Winner: <strong>${pick.name}</strong><br>
-    ⭐ ${pick.rating}<br>
-    <a href="${pick.url}" target="_blank">View on Yelp</a>
+    <a href="https://www.openstreetmap.org/?mlat=${pick.lat}&mlon=${pick.lon}" target="_blank">
+      View on map
+    </a>
   `;
 });
