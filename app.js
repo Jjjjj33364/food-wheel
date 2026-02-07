@@ -6,7 +6,7 @@ let restaurants = [];
 
 generateBtn.addEventListener("click", async () => {
   const checked = [...document.querySelectorAll("input:checked")].map(
-    (c) => c.value
+    (c) => c.value.toLowerCase()
   );
 
   if (checked.length === 0) {
@@ -16,16 +16,19 @@ generateBtn.addEventListener("click", async () => {
 
   restaurants = [];
 
-  for (const cuisine of checked) {
-    const query = `
-      [out:json];
-      area["name"="New York"]->.searchArea;
-      (
-        node["amenity"="restaurant"]["cuisine"~"${cuisine}", i](area.searchArea);
-      );
-      out;
-    `;
+  // Overpass query for ALL restaurants in NYC
+  const query = `
+    [out:json][timeout:25];
+    area["name"="New York"]["admin_level"="4"]->.searchArea;
+    (
+      node["amenity"="restaurant"](area.searchArea);
+      way["amenity"="restaurant"](area.searchArea);
+      relation["amenity"="restaurant"](area.searchArea);
+    );
+    out center;
+  `;
 
+  try {
     const res = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
       body: query,
@@ -33,16 +36,28 @@ generateBtn.addEventListener("click", async () => {
 
     const data = await res.json();
 
-    const places = data.elements.map((el) => ({
-      name: el.tags.name || "Unknown",
-      lat: el.lat,
-      lon: el.lon,
-    }));
+    // Filter by cuisine manually
+    data.elements.forEach((el) => {
+      if (!el.tags || !el.tags.name) return;
 
-    restaurants.push(...places);
+      const cuisineTag = (el.tags.cuisine || "").toLowerCase();
+
+      // Check if any selected cuisine matches
+      if (checked.some((c) => cuisineTag.includes(c))) {
+        restaurants.push({
+          name: el.tags.name,
+          lat: el.lat || el.center?.lat,
+          lon: el.lon || el.center?.lon,
+        });
+      }
+    });
+
+    console.log("Restaurants loaded:", restaurants);
+    alert(`Loaded ${restaurants.length} restaurants`);
+  } catch (err) {
+    console.error(err);
+    alert("Error loading restaurants. Try again later.");
   }
-
-  alert(`Loaded ${restaurants.length} restaurants`);
 });
 
 spinBtn.addEventListener("click", () => {
