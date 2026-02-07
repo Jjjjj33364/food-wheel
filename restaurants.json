@@ -1,0 +1,6 @@
+[
+  {"name": "Joe's Pizza", "lat": 40.7306, "lon": -73.9866, "cuisine": "pizza"},
+  {"name": "Tandoori House", "lat": 40.7421, "lon": -73.9872, "cuisine": "indian"},
+  {"name": "Little Italy Ristorante", "lat": 40.7191, "lon": -73.9973, "cuisine": "italian"},
+  {"name": "Dragon Garden", "lat": 40.7185, "lon": -73.9952, "cuisine": "chinese"}
+]
